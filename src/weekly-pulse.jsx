@@ -992,6 +992,17 @@ const PinScreen = ({ onUnlock }) => {
 export default function App() {
   const [unlocked, setUnlocked] = useState(false);
 
+  // Lock when tab/app loses focus and comes back
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        setUnlocked(false);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
+
   if (!unlocked) return <PinScreen onUnlock={() => setUnlocked(true)} />;
 
   return <WeeklyPulse />;
