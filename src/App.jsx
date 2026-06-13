@@ -903,7 +903,112 @@ const EMPTY_MONTH = () => ({
 const monthKey = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
 const monthLabel = (d) => d.toLocaleString("en-US", { month: "long", year: "numeric" });
 
+
+const PIN = "321654";
+
+const PinScreen = ({ onUnlock }) => {
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState(false);
+  const [shake, setShake] = useState(false);
+
+  const handleKey = (val) => {
+    if (val === "del") {
+      setPin(p => p.slice(0, -1));
+      setError(false);
+      return;
+    }
+    const next = pin + val;
+    setPin(next);
+    if (next.length === PIN.length) {
+      if (next === PIN) {
+        onUnlock();
+      } else {
+        setShake(true);
+        setError(true);
+        setTimeout(() => { setPin(""); setShake(false); setError(false); }, 800);
+      }
+    }
+  };
+
+  const keys = ["1","2","3","4","5","6","7","8","9","","0","del"];
+
+  return (
+    <div style={{
+      minHeight: "100vh", background: C.bg, display: "flex",
+      alignItems: "center", justifyContent: "center", fontFamily: "'Inter','Segoe UI',sans-serif"
+    }}>
+      <div style={{ textAlign: "center", width: 280 }}>
+        <div style={{ marginBottom: 32 }}>
+          <div style={{ color: C.gold, fontSize: 11, letterSpacing: 3, textTransform: "uppercase", marginBottom: 8 }}>Weekly Pulse</div>
+          <div style={{ color: C.text, fontSize: 24, fontWeight: 800 }}>Enter PIN</div>
+          <div style={{ color: C.muted, fontSize: 13, marginTop: 6 }}>Enter your 6-digit PIN to continue</div>
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "center", gap: 14, marginBottom: 36,
+          animation: shake ? "shake 0.4s ease" : "none" }}>
+          {Array.from({ length: PIN.length }).map((_, i) => (
+            <div key={i} style={{
+              width: 14, height: 14, borderRadius: "50%",
+              background: i < pin.length ? (error ? C.red : C.gold) : "transparent",
+              border: `2px solid ${i < pin.length ? (error ? C.red : C.gold) : C.muted}`,
+              transition: "all 0.15s"
+            }} />
+          ))}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
+          {keys.map((k, i) => (
+            k === "" ? <div key={i} /> :
+            <button key={i} onMouseDown={() => handleKey(k)} style={{
+              background: C.surface, border: `1px solid ${C.border}`,
+              borderRadius: 12, color: k === "del" ? C.muted : C.text,
+              fontSize: k === "del" ? 18 : 22, fontWeight: 600,
+              padding: "18px 0", cursor: "pointer",
+            }}
+            onMouseEnter={e => e.target.style.background = C.card}
+            onMouseLeave={e => e.target.style.background = C.surface}
+            >
+              {k === "del" ? "⌫" : k}
+            </button>
+          ))}
+        </div>
+
+        {error && <div style={{ color: C.red, fontSize: 13, marginTop: 20 }}>Incorrect PIN — try again</div>}
+
+        <style>{`
+          @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-6px); }
+            80% { transform: translateX(6px); }
+          }
+        `}</style>
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
+  const [unlocked, setUnlocked] = useState(false);
+
+  // Lock when tab/app loses focus and comes back
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        setUnlocked(false);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, []);
+
+  if (!unlocked) return <PinScreen onUnlock={() => setUnlocked(true)} />;
+
+  return <WeeklyPulse />;
+}
+
+function WeeklyPulse() {
   const now = new Date();
   const [currentDate, setCurrentDate] = useState(new Date(now.getFullYear(), now.getMonth(), 1));
   const [monthData, setMonthData] = useState({ [monthKey(now)]: EMPTY_MONTH() });
@@ -1216,5 +1321,3 @@ export default function App() {
     </div>
   );
 }
- 
- 
