@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { saveMonthData, loadMonthData } from "./firebase";
 
 // ─── Design tokens ───────────────────────────────────────────────
 const C = {
@@ -933,6 +934,28 @@ export default function App() {
 
   const { targets, revWeeks, invoiceWeeks, reviewWeeks, npsWeeks, ghpWeeks, walkInWeeks, stddWeeks, hni, hniEntries, discountEntries, tasks } = data;
 
+  const [saveStatus, setSaveStatus] = useState("saved");
+
+  // Auto-load from Firebase when month changes
+  useEffect(() => {
+    setSaveStatus("loading");
+    loadMonthData(key).then(saved => {
+      if (saved) {
+        setMonthData(prev => ({ ...prev, [key]: { ...EMPTY_MONTH(), ...saved } }));
+      }
+      setSaveStatus("saved");
+    });
+  }, [key]);
+
+  // Auto-save to Firebase when data changes (debounced 1.5s)
+  useEffect(() => {
+    setSaveStatus("saving");
+    const timer = setTimeout(() => {
+      saveMonthData(key, data).then(() => setSaveStatus("saved"));
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [data, key]);
+
   // Derived
   const avgTicketWeeks = revWeeks.map((r, i) => {
     const rev = safeNum(r); const inv = safeNum(invoiceWeeks[i]);
@@ -987,14 +1010,25 @@ export default function App() {
           <div style={{ textAlign: "right" }}>
             <div style={{ color: C.gold, fontWeight: 700, fontSize: 13 }}>{getWeekLabel()}</div>
             <div style={{ color: C.muted, fontSize: 11, marginTop: 2 }}>{monthLabel(currentDate)}</div>
-            <div style={{
-              marginTop: 6, display: "inline-block",
-              background: doneCount === checklist.length ? "#1a3a2a" : "#2a1f0a",
-              border: `1px solid ${doneCount === checklist.length ? C.green : C.gold}`,
-              borderRadius: 20, padding: "2px 10px", fontSize: 11,
-              color: doneCount === checklist.length ? C.green : C.gold
-            }}>
-              Checklist {doneCount}/{checklist.length}
+            <div style={{ display: "flex", gap: 6, marginTop: 6, justifyContent: "flex-end" }}>
+              <div style={{
+                display: "inline-block",
+                background: saveStatus === "saved" ? "#1a3a2a" : "#2a1f0a",
+                border: `1px solid ${saveStatus === "saved" ? C.green : C.gold}`,
+                borderRadius: 20, padding: "2px 10px", fontSize: 11,
+                color: saveStatus === "saved" ? C.green : C.gold
+              }}>
+                {saveStatus === "loading" ? "⏳ Loading..." : saveStatus === "saving" ? "💾 Saving..." : "✅ Saved"}
+              </div>
+              <div style={{
+                display: "inline-block",
+                background: doneCount === checklist.length ? "#1a3a2a" : "#2a1f0a",
+                border: `1px solid ${doneCount === checklist.length ? C.green : C.gold}`,
+                borderRadius: 20, padding: "2px 10px", fontSize: 11,
+                color: doneCount === checklist.length ? C.green : C.gold
+              }}>
+                Checklist {doneCount}/{checklist.length}
+              </div>
             </div>
           </div>
         </div>
