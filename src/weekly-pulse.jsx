@@ -921,7 +921,6 @@ const PinScreen = ({ onUnlock }) => {
     setPin(next);
     if (next.length === PIN.length) {
       if (next === PIN) {
-        sessionStorage.setItem("wp-auth", "1");
         onUnlock();
       } else {
         setShake(true);
@@ -939,14 +938,12 @@ const PinScreen = ({ onUnlock }) => {
       alignItems: "center", justifyContent: "center", fontFamily: "'Inter','Segoe UI',sans-serif"
     }}>
       <div style={{ textAlign: "center", width: 280 }}>
-        {/* Logo */}
         <div style={{ marginBottom: 32 }}>
           <div style={{ color: C.gold, fontSize: 11, letterSpacing: 3, textTransform: "uppercase", marginBottom: 8 }}>Weekly Pulse</div>
           <div style={{ color: C.text, fontSize: 24, fontWeight: 800 }}>Enter PIN</div>
           <div style={{ color: C.muted, fontSize: 13, marginTop: 6 }}>Enter your 6-digit PIN to continue</div>
         </div>
 
-        {/* Dots */}
         <div style={{ display: "flex", justifyContent: "center", gap: 14, marginBottom: 36,
           animation: shake ? "shake 0.4s ease" : "none" }}>
           {Array.from({ length: PIN.length }).map((_, i) => (
@@ -959,17 +956,14 @@ const PinScreen = ({ onUnlock }) => {
           ))}
         </div>
 
-        {/* Keypad */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
           {keys.map((k, i) => (
             k === "" ? <div key={i} /> :
             <button key={i} onMouseDown={() => handleKey(k)} style={{
-              background: k === "del" ? C.surface : C.surface,
-              border: `1px solid ${C.border}`,
+              background: C.surface, border: `1px solid ${C.border}`,
               borderRadius: 12, color: k === "del" ? C.muted : C.text,
               fontSize: k === "del" ? 18 : 22, fontWeight: 600,
               padding: "18px 0", cursor: "pointer",
-              transition: "background 0.1s",
             }}
             onMouseEnter={e => e.target.style.background = C.card}
             onMouseLeave={e => e.target.style.background = C.surface}
@@ -996,7 +990,7 @@ const PinScreen = ({ onUnlock }) => {
 };
 
 export default function App() {
-  const [unlocked, setUnlocked] = useState(!!sessionStorage.getItem("wp-auth"));
+  const [unlocked, setUnlocked] = useState(false);
 
   if (!unlocked) return <PinScreen onUnlock={() => setUnlocked(true)} />;
 
